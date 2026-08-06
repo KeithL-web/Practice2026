@@ -1,7 +1,3 @@
-window.addEventListener('DOMContentLoaded', () =>
-{
-	window.history.replaceState({}, '', '/dashboard');
-});
 async function generateBrowserHash(message)
 {
 	const msgBuffer = new TextEncoder().encode(message);
