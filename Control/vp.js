@@ -1,5 +1,6 @@
 'use strict';
 let media, positionData, topBar, unhideDiv, btnPlay, btnStop, btnHide;
+let radioPlayOnClick;
 let barTable, controlWidth, controlHeight;
 let btnInc, btnDec, btnNorm;
 let numerator, denominator;
@@ -46,9 +47,11 @@ function UnlockPlayButtons()
 function LockPlayOnRowClick()
 {
 	blnLockPlay = true;
-	UnhighlightRow();
-	StopMonitor();
-	media.pause();
+	if (playHow=== 'highlight')
+	{
+		StopMonitor();
+		media.pause();
+	}
 }
 function UnlockPlayOnRowClick()
 {
@@ -125,6 +128,7 @@ function DoPlay()
 		if (media.currentTime < theBegining) media.currentTime = theBegining;
 		if (!blnPlayButtonsLocked) media.play();
 		MonitorRow();
+		radioPlayOnClick.checked = true;
 	}
 	else
 	{
@@ -181,6 +185,7 @@ function UnhideBar()
 	unhideDiv.style.Order = 9999;
 	blnBarVisible = true;
 	btnHide.title = 'Hide Controls';
+	FixTopBar();
 	EnsureCorrectSizes();
 }
 function ShowNote(event)
@@ -208,11 +213,50 @@ function AutoTableClick(event)
 }
 function InnerHeight()
 {
-	return (window.innerHeight - ((blnBarVisible) ? barThickness : 0)) -15;
+	let h = window.innerHeight-15;
+	if (blnBarVisible) h -= barThickness;
+	return h;
 }
 function InnerWidth()
 {
-	return window.innerWidth - resizerSize;
+	let w = window.innerWidth;
+	return w;
+}
+let sizeRatio=0.5;
+function MakeSureLyricPanelCorrectSize()
+{
+	if (blnLeftToRight)
+	{
+		let w = InnerWidth() - resizerSize;
+		container.style.width = w + 'px';
+		if (!isTouchDeviceOrNoScores)
+		{
+			w *= sizeRatio;
+			w = Math.round(w);
+		}
+		lyricPanel.style.flexBasis = w + 'px';
+		lyricPanel.style.width = w + 'px';
+		let nw = (container.offsetWidth - resizerSize - w)+'px';
+		scorePanel.style.flexBasis = nw;
+		scorePanel.style.width = nw;
+		scoreSrc.style.width = nw;
+	}
+	else
+	{
+		let h = InnerHeight() - resizerSize;
+		container.style.height = h + 'px';
+		if (!isTouchDeviceOrNoScores)
+		{
+			h *= sizeRatio;
+			h = Math.round(h);
+		}
+		lyricPanel.style.flexBasis = h + 'px';
+		lyricPanel.style.height = h + 'px';
+		let nh = (container.offsetHeight - resizerSize - h) + 'px';
+		scorePanel.style.flexBasis = nh;
+		scorePanel.style.height = nh;
+		scoreSrc.style.height = nh;
+	}
 }
 function EnsureCorrectSizes()
 {
@@ -234,7 +278,7 @@ function EnsureCorrectSizes()
 			scoreSrc.style.height = theHeight;
 			resizer.style.height = theHeight;
 			resizer.style.width = resizerSize + 'px';
-			let w = container.offsetWidth - lyricPanel.offsetWidth - resizerSize;
+			let w = container.offsetWidth - lyricPanel.offsetWidth-resizerSize;
 			scorePanel.style.flexBasis = w + 'px';
 			scorePanel.style.width = w + 'px';
 			scoreSrc.style.width = w + 'px';
@@ -1066,7 +1110,9 @@ function CheckForAutoScroll(instant, lowBarData)
 						specialCell.style.position = 'relative';
 						let span = document.createElement('v1');
 						span.className = 'hide';
-						span.innerText = bar + ":" + beatNo;
+						let txt = bar + ":" + beatNo;
+						if (dynamic !== '') txt += "<br><span dyn>" + dynamic + "</span>";
+						span.innerHTML = txt;
 						specialCell.appendChild(span);
 					}
 				}
@@ -1085,9 +1131,24 @@ function CheckForAutoScroll(instant, lowBarData)
 		}
 	}
 	let minPosValue, maxPosValue;
+	let lastSize = 0;
+	function FontOrZoomChange(entries)
+	{
+		const curSize = entries[0].contentRect.width * window.devicePixelRatio;
+		if (curSize !== lastSize)
+		{
+			lastSize = curSize;
+			CheckFontSizes();
+		}
+	}
 	function Setup()
 	{
 		FixRows();
+		let div = document.createElement('div');
+		div.style = 'position:fixed;top:0;left:0;visibility:hidden;width:1rem;height:1rem;pointer-events:none;';
+		document.body.prepend(div);
+		lastSize = parseFloat(window.getComputedStyle(div).width);
+		(new ResizeObserver(FontOrZoomChange)).observe(div);
 		isTouchDeviceOrNoScores = 'ontouchstart' in document.documentElement;
 		scoreSrc = document.getElementById("scoreSrc");
 		if (scoreSrc == null)
@@ -1099,6 +1160,7 @@ function CheckForAutoScroll(instant, lowBarData)
 		if (isTouchDeviceOrNoScores)
 		{
 			resizerSize = 0;
+			sizeRatio = 1;
 			if (resizer != null)
 			{
 				scorePanel.remove();
@@ -1200,7 +1262,8 @@ function CheckForAutoScroll(instant, lowBarData)
 		innerCell = innerTable.insertRow().insertCell();
 		innerCell.innerText = 'When a row is clicked,';
 		CreateRadio('nothing', 'RC', 'do nothing', 'When selected, clicking a row will have no effect', innerTable.insertRow().insertCell());
-		CreateRadio('play', 'RC', 'play music', 'When selected, the music will start playing at the point where the table is clicked', innerTable.insertRow().insertCell()).checked = true;
+		radioPlayOnClick = CreateRadio('play', 'RC', 'play music', 'When selected, the music will start playing at the point where the table is clicked', innerTable.insertRow().insertCell());
+		radioPlayOnClick.checked = true;
 		CreateRadio('highlight', 'RC', 'highlight row only', 'When selected, the music will not play but row will be highlighted', innerTable.insertRow().insertCell());
 		playHow = 'play';
 		barCell = barRow.insertCell();
@@ -1236,25 +1299,25 @@ function CheckForAutoScroll(instant, lowBarData)
 			blnPositioning = false;
 			SetPosLabel();
 		};
-		function OnMouseMove(v,ev)
+		function OnMouseMove(value,event, isTouch)
 		{
 			blnPositioning = true;
-			if ((dataType & 2) != 0 && ev.buttons === 1)
+			if ((dataType & 2) != 0 && (isTouch || event.buttons === 1))
 			{
 				cellBeatNo.innerText = '1';
-				cellBarNo.innerText = v;
+				cellBarNo.innerText = value;
 			}
-			elePosition.innerText = v + "/" + rangePos.max;
+			elePosition.innerText = value + "/" + rangePos.max;
 		}
 		rangePos.onmousemove = function (ev)
 		{
 			let v = GetPos(rangePos, ev);
-			OnMouseMove(v,ev);
+			OnMouseMove(v,ev, false);
 		};
 		rangePos.ontouchmove = function (ev)
 		{
 			let v = GetPos(rangePos, ev.touches[0]);
-			OnMouseMove(v,ev);
+			OnMouseMove(v,ev,true);
 		};
 		rangePos.onmouseup = function (ev)
 		{
@@ -1395,6 +1458,7 @@ function CheckForAutoScroll(instant, lowBarData)
 	}
 	function RadioClick(event)
 	{
+		if (playHow === event.srcElement.id) return;
 		playHow = event.srcElement.id;
 		if (playHow === 'play') UnlockPlayOnRowClick();
 		else LockPlayOnRowClick();
@@ -1471,15 +1535,15 @@ function CheckForAutoScroll(instant, lowBarData)
 				CancelInternalResize();
 				return;
 			}
-			DoSizing(e.clientX, e.clientY);
+			DoInternalResizing(e.clientX, e.clientY);
 		});
 		document.ontouchmove = function (ev)
 		{
 			if (!isInternallyResizing) return;
-			DoSizing(ev.touches[0].clientX, ev.touches[0].clientY);
+			DoInternalResizing(ev.touches[0].clientX, ev.touches[0].clientY);
 		};
 	}
-	function DoSizing(x,y)
+	function DoInternalResizing(x,y)
 	{
 		if (blnLeftToRight)
 		{
@@ -1488,6 +1552,7 @@ function CheckForAutoScroll(instant, lowBarData)
 			newWidthForLyricPanel = InnerWidth() - newWidthForLyricPanel;
 			lyricPanel.style.flexBasis = newWidthForLyricPanel + 'px';
 			lyricPanel.style.width = newWidthForLyricPanel + 'px';
+			sizeRatio = lyricPanel.offsetWidth / container.offsetWidth;
 		}
 		else
 		{
@@ -1497,6 +1562,7 @@ function CheckForAutoScroll(instant, lowBarData)
 			if (blnBarVisible) newHeightForLyricPanel -= topBar.clientHeight;
 			lyricPanel.style.flexBasis = newHeightForLyricPanel + 'px';
 			lyricPanel.style.height = newHeightForLyricPanel + 'px';
+			sizeRatio = newHeightForLyricPanel / container.offsetHeight;
 		}
 		EnsureCorrectSizes();
 	}
@@ -1555,11 +1621,12 @@ function CheckForAutoScroll(instant, lowBarData)
 		else SetHorizontalLayout();
 	}
 	let waitAbit;
-	function DoResize()
+	function DoExternalResize()
 	{
 		FixTopBar();
+		MakeSureLyricPanelCorrectSize();
 		clearTimeout(waitAbit);
-		waitAbit=setTimeout(CheckFontSizes, 500);
+		waitAbit = setTimeout(CheckFontSizes, 400);
 	}
 	function FixTopBar()
 	{
@@ -1613,7 +1680,7 @@ function CheckForAutoScroll(instant, lowBarData)
 		SetHorizontalLayout();
 		window.addEventListener("beforeprint", BeforePrint);
 		window.addEventListener("afterprint", AfterPrint);
-		window.addEventListener('resize', DoResize);
+		window.addEventListener('resize', DoExternalResize);
 		FixTopBar();
 		setTimeout(CheckFontSizes,250);
 	}
