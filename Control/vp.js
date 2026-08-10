@@ -77,8 +77,12 @@ function OnPause()
 function OnResumeOrPlay()
 {
 	blnStopped = false;
-	MonitorRow();
 	UpdateStatus();
+}
+function OnPlayEnd()
+{
+	StopMonitor();
+	media.stop();
 }
 function SetPosLabel(value = null)
 {
@@ -142,7 +146,7 @@ function DoStop()
 	if (blnStopped) return;
 	CancelScroll();
 	blnStopped = true;
-	media.pause();
+	media.stop();
 	media.currentTime = theBegining;
 	window.scrollTo(0, 0);
 	UnhighlightRow(currentRow);
@@ -393,6 +397,7 @@ function PlayRow(row, propInto)
 		const end = positionData[index + 1].Time;
 		offset = (end - beg) * propInto;
 	}
+	StopMonitor();
 	media.currentTime = beg + offset;
 	media.play();
 	MonitorRow(index);
@@ -449,7 +454,13 @@ function CheckForAutoScroll(instant, lowBarData)
 		oldBarNo = -999999;
 		oldBeatNo = -1;
 	}
-	let posDiv=null;
+	let posDiv = null;
+	function getStack()
+	{
+		const err = new Error();
+		console.log(err.stack);
+	}
+	let theID=0;
 	function MonitorRow(index)
 	{
 		let instant = index === undefined;
@@ -497,7 +508,7 @@ function CheckForAutoScroll(instant, lowBarData)
 			oldPos = (cellFirst.offsetLeft - 1);
 			posDiv.style.left = (oldPos) + "px";
 		}
-		else if(posDiv != null)
+		else if (posDiv != null)
 		{
 			posDiv.remove();
 		}
@@ -506,9 +517,11 @@ function CheckForAutoScroll(instant, lowBarData)
 			if (barData === null) return;
 			if (media.paused) return;
 			const currentTime = media.currentTime;
-			const elapsed = (media.currentTime - barData.Time) / barData.Duration;
+			let elapsed = (currentTime - barData.Time) / barData.Duration;
+			if (index === 0 && elapsed < 0) elapsed = 0;
 			if (elapsed < 0)
 			{
+				console.log("Negative so recalc");
 				setTimeout(MonitorRow, 1);
 				return;
 			}
@@ -555,14 +568,26 @@ function CheckForAutoScroll(instant, lowBarData)
 				{
 					let rowInfo = barData.RowInfos[r];
 					let indexProp = Math.floor(elapsed * rowInfo.AutoTotal);
+					if (indexProp >= rowInfo.AutoPointer.length) indexProp = rowInfo.AutoPointer.length - 1;
 					if (indexProp != rowInfo.OldIndexProp)
 					{
 						let pointer = rowInfo.AutoPointer[indexProp];
 						if (pointer != rowInfo.OldPointer)
 						{
-							rowInfo.AutoRow.cells[pointer].style.backgroundColor = rowInfo.BackColor;
-							if (rowInfo.OldPointer >= 0)
-							rowInfo.AutoRow.cells[rowInfo.OldPointer].style.backgroundColor = backColor;
+							try
+							{
+								rowInfo.AutoRow.cells[pointer].style.backgroundColor = rowInfo.BackColor;
+							}
+							catch
+							{
+								console.log("OH NO");
+							};
+							try
+							{
+								if (rowInfo.OldPointer >= 0)
+								rowInfo.AutoRow.cells[rowInfo.OldPointer].style.backgroundColor = backColor;
+							}
+							catch { };
 							rowInfo.OldPointer = pointer;
 						}
 						rowInfo.OldIndexProp = indexProp;
@@ -571,7 +596,14 @@ function CheckForAutoScroll(instant, lowBarData)
 			}
 			requestAnimationFrame(CallBackAnimate);
 		}
-		requestAnimationFrame(CallBackAnimate);
+		try
+		{
+			cancelAnimationFrame(theID);
+		}
+		catch
+		{
+		}
+		theID = requestAnimationFrame(CallBackAnimate);
 	}
 	function SmoothScrollTo(container, targetY, duration)
 	{
@@ -809,6 +841,7 @@ function CheckForAutoScroll(instant, lowBarData)
 	}
 	function findIndexForTime(time)
 	{
+		if (time < positionData[0].Time) return 0;
 		let leftIndex = 0;
 		let rightIndex = positionData.length - 1;
 		while (leftIndex <= rightIndex)
@@ -858,7 +891,6 @@ function CheckForAutoScroll(instant, lowBarData)
 				positionData[index].Row.scrollIntoView({ behavior: 'smooth' });
 			}
 		}
-		MonitorRow();
 	}
 	let createdInner = null;
 	function CreateInnerCell()
@@ -1001,6 +1033,7 @@ function CheckForAutoScroll(instant, lowBarData)
 			let changeSig = false;
 			row.setAttribute('id', 'M' + index);
 			let time = parseFloat(row.getAttribute('t'));
+			if (time < 0) time = 0;
 			let specialCell = null;
 			let partsTable = null;
 			if (row.hasAttribute('tx'))
@@ -1141,7 +1174,7 @@ function CheckForAutoScroll(instant, lowBarData)
 			CheckFontSizes();
 		}
 	}
-	function Setup()
+	async function Setup()
 	{
 		FixRows();
 		let div = document.createElement('div');
@@ -1182,9 +1215,8 @@ function CheckForAutoScroll(instant, lowBarData)
 		btnHide = CreateButton('buttonUnhide', "...", "Unhide controls", unhideDiv, ToggleHide);
 		unhideDiv.style.width = (btnHide.offsetWidth) + 'px';
 		unhideDiv.style.height = (btnHide.offsetHeight) + 'px';
-		media = document.createElement('audio');
-		document.body.appendChild(media);
-		media.src = 'song.mp3';
+		media = new AudioController();
+		await media.load('song.mp3');
 		barTable = document.getElementById('controls');
 		barTable.style.transformOrigin = 'top left';
 		barTable.style.whiteSpace = 'nowrap';
@@ -1352,7 +1384,8 @@ function CheckForAutoScroll(instant, lowBarData)
 		UnhideBar();
 		document.body.addEventListener('dblclick', UnhideBar);
 		media.addEventListener('pause', OnPause);
-		media.addEventListener('playing', OnResumeOrPlay);
+		media.addEventListener('play', OnResumeOrPlay);
+		media.addEventListener('ended', OnPlayEnd);
 		window.addEventListener('resize',  EnsureCorrectSizes);
 		UpdateStatus();
 	}
@@ -1666,7 +1699,7 @@ function CheckForAutoScroll(instant, lowBarData)
 	{
 		if (!isPaused) media.play();
 	}
-	function DoItAll()
+	async function DoItAll()
 	{
 		if (allOK === false || allOK === null)
 		{
@@ -1674,7 +1707,8 @@ function CheckForAutoScroll(instant, lowBarData)
 			document.write("<span color='red'>Too Many Login Attempts</span>");
 			return;
 		}
-		Setup();
+		await Setup();
+		media.currentTime = theBegining;
 		if (!isTouchDeviceOrNoScores) MoreSetup();
 		container.style.display = 'flex';
 		SetHorizontalLayout();
@@ -1683,5 +1717,153 @@ function CheckForAutoScroll(instant, lowBarData)
 		window.addEventListener('resize', DoExternalResize);
 		FixTopBar();
 		setTimeout(CheckFontSizes,250);
+	}
+	class AudioController extends EventTarget
+	{
+		constructor()
+		{
+			super();
+			this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+			this.audioElement = new Audio();
+			this.audioElement.crossOrigin = "anonymous";
+			this.sourceNode = this.audioCtx.createMediaElementSource(this.audioElement);
+			this.sourceNode.connect(this.audioCtx.destination);
+			this.startTime = 0;
+			this.elapsedOffset = 0;
+			this.isPlaying = false;
+			this._setupEventForwarding();
+		}
+		async load(url)
+		{
+			this.audioElement.src = url;
+			return new Promise((resolve, reject) =>
+			{
+				const onLoad = () =>
+				{
+					this.audioElement.removeEventListener('error', onError);
+					resolve();
+				};
+				const onError = (error) =>
+				{
+					this.audioElement.removeEventListener('loadedmetadata', onLoad);
+					reject(new Error(`Failed to load audio: ${error.message || 'Unknown error'}`));
+				};
+				this.audioElement.addEventListener('loadedmetadata', onLoad, { once: true });
+				this.audioElement.addEventListener('error', onError, { once: true });
+			});
+		}
+		play()
+		{
+			if (this.isPlaying) return;
+			if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+			this.startTime = this.audioCtx.currentTime;
+			this.audioElement.play();
+			this.isPlaying = true;
+		}
+		pause()
+		{
+			if (!this.isPlaying) return;
+			this.audioElement.pause();
+			this.elapsedOffset += (this.audioCtx.currentTime - this.startTime) * this.playbackRate;
+			this.isPlaying = false;
+		}
+		stop()
+		{
+			this.pause();
+			this.currentTime = 0;
+		}
+		get paused()
+		{
+			return (!this.isPlaying);
+		}
+		get baseLatency()
+		{
+			return this.audioCtx.baseLatency || 0;
+		}
+		get outputLatency()
+		{
+			return this.audioCtx.outputLatency || 0;
+		}
+		get currentTime()
+		{
+			if (!this.isPlaying)
+			{
+				return this.elapsedOffset;
+			}
+			const currentRunTime = (this.audioCtx.currentTime - this.startTime) * this.playbackRate;
+			const rawSongTime = this.elapsedOffset + currentRunTime;
+			const outputLag = this.audioCtx.outputLatency || 0;
+			const baseLag = this.audioCtx.baseLatency || 0;
+			const totalHardwareLag = outputLag + baseLag;
+			return Math.max(0, rawSongTime - totalHardwareLag);
+		}
+		set currentTime(seconds)
+		{
+			this.elapsedOffset = Math.max(0, Math.min(seconds, this.duration));
+			this.audioElement.currentTime = this.elapsedOffset;
+			if (this.isPlaying)
+			{
+				this.startTime = this.audioCtx.currentTime;
+			}
+		}
+		get playbackRate()
+		{
+			return this.audioElement.playbackRate;
+		}
+		set playbackRate(speed)
+		{
+			const targetSpeed = Math.max(0.1, speed);
+			if (this.isPlaying)
+			{
+				this.elapsedOffset += (this.audioCtx.currentTime - this.startTime) * this.playbackRate;
+				this.startTime = this.audioCtx.currentTime;
+			}
+			this.audioElement.playbackRate = targetSpeed;
+		}
+		get duration()
+		{
+			return this.audioElement.duration || 0;
+		}
+		_setupEventForwarding()
+		{
+			this._boundPlay = () => this.dispatchEvent(new Event('play'));
+			this._boundPause = () => this.dispatchEvent(new Event('pause'));
+			this._boundRateChange = () => this.dispatchEvent(new Event('ratechange'));
+			this._boundEnded = () =>
+			{
+				this.isPlaying = false;
+				this.elapsedOffset = 0;
+				this.dispatchEvent(new Event('ended'));
+			};
+			this.audioElement.addEventListener('play', this._boundPlay);
+			this.audioElement.addEventListener('pause', this._boundPause);
+			this.audioElement.addEventListener('ratechange', this._boundRateChange);
+			this.audioElement.addEventListener('ended', this._boundEnded);
+		}
+		async destroy()
+		{
+			if (this.isPlaying)
+			{
+				this.audioElement.pause();
+				this.isPlaying = false;
+			}
+			this.audioElement.src = "";
+			this.audioElement.load();
+			if (this._boundPlay) this.audioElement.removeEventListener('play', this._boundPlay);
+			if (this._boundPause) this.audioElement.removeEventListener('pause', this._boundPause);
+			if (this._boundRateChange) this.audioElement.removeEventListener('ratechange', this._boundRateChange);
+			if (this._boundEnded) this.audioElement.removeEventListener('ended', this._boundEnded);
+			if (this.sourceNode)
+			{
+				this.sourceNode.disconnect();
+			}
+			if (this.audioCtx && this.audioCtx.state !== 'closed')
+			{
+				await this.audioCtx.close();
+			}
+			this.audioElement = null;
+			this.sourceNode = null;
+			this.audioCtx = null;
+		}
 	}
 	setTimeout(DoItAll, 0);
