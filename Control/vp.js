@@ -1667,7 +1667,7 @@ function CheckForAutoScroll(instant, lowBarData)
 		barTable.style.transform = 'none';
 		barTable.style.transformOrigin = 'top left';
 		let ratio = controlHeight / window.innerHeight;
-		const maxRat = 0.1;
+		const maxRat = 0.2;
 		if (ratio > maxRat) scale = maxRat / ratio;
 		if (scale * controlHeight < 50) scale = 50 / controlHeight;
 		container.style.width = window.innerWidth + "px";
