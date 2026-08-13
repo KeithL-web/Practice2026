@@ -5,7 +5,7 @@ let barTable, controlWidth, controlHeight;
 let btnInc, btnDec, btnNorm;
 let numerator, denominator;
 let dataType;
-let rangePos, elePosition, rangeSpeed, elePlaybackRate, rangeVol;
+let rangePos, elePosition;
 let rangeWidth;
 let cellBeatNo, cellBarNo;
 let maxBar=0, maxBeatsPerBar = 0;
@@ -1223,6 +1223,7 @@ function CheckForAutoScroll(instant, lowBarData)
 		barTable.style.padding = '1px';
 		barTable.style.fontSize = '18pt';
 		let barCell, innerTable, innerCell;
+		let barRow2 = barTable.insertRow();
 		let barRow = barTable.insertRow();
 		let padding = '0px 0.5ex 0px 0.5ex';
 		barCell = barRow.insertCell();
@@ -1235,6 +1236,9 @@ function CheckForAutoScroll(instant, lowBarData)
 		innerCell = innerTable.insertRow().insertCell();
 		btnPlay = CreateButton('buttonPlay', playIcon, 'Play', innerCell, DoPlay);
 		btnStop = CreateButton('buttonPlay', stopIcon, 'Stop', innerCell, DoStop);
+		let lab = (dataType == 1) ? "Time:" : "Bar:";
+		let minWidth = 4.5;
+		if (maxPosValue >= 100) minWidth = 6.5;
 		if (dataType != 1)
 		{
 			style.BeginNew();
@@ -1242,38 +1246,53 @@ function CheckForAutoScroll(instant, lowBarData)
 			style.Add('.num', "position:relative;top:0.5ex;");
 			style.Add('.den', "position:relative;top:-0.5ex;");
 			style.Finish();
-			innerTable = CreateTable(barRow.insertCell());
+			let outerTable = CreateTable(barRow.insertCell());
+			outerTable.style.fontSize = '18pt';
+			let aRow = outerTable.insertRow();
+			innerTable = CreateTable(aRow.insertCell());
 			numerator = innerTable.insertRow().insertCell();
 			denominator = innerTable.insertRow().insertCell();
 			numerator.className = 'com num';
 			denominator.className = 'com den';
 			numerator.innerText = positionData[0].BeatsPerBar;
 			denominator.innerText = positionData[0].BeatSize;
-			cellBarNo = barRow.insertCell();
+			cellBarNo = aRow.insertCell();
 			cellBarNo.style.padding = '0';
 			let nc = 1;
 			if (maxBar >= 100) nc = 3;
 			else if (maxBar >= 10) nc = 2;
-			cellBarNo.style.minWidth = nc+'ch';
+			cellBarNo.style.minWidth = nc + 'ch';
 			cellBarNo.style.fontSize = '250%';
 			cellBarNo.style.textAlign = 'right';
 			cellBarNo.style.verticalAlign = 'middle';
 			cellBarNo.innerHTML = positionData[0].Bar;
-			barCell = barRow.insertCell();
+			barCell = aRow.insertCell();
 			barCell.style.padding = '0';
 			barCell.style.fontSize = '250%';
 			barCell.style.verticalAlign = 'middle';
 			barCell.innerText = ":";
-			cellBeatNo = barRow.insertCell();
+			cellBeatNo = aRow.insertCell();
 			cellBeatNo.style.paddingRight = '0.5ex';
 			cellBeatNo.style.borderRight = '1px solid white';
 			nc = 1;
 			if (maxBeatsPerBar >= 10) nc = 2;
-			cellBeatNo.style.minWidth = nc+'ch';
+			cellBeatNo.style.minWidth = nc + 'ch';
 			cellBeatNo.style.fontSize = '250%';
 			cellBeatNo.style.textAlign = 'left';
 			cellBeatNo.style.verticalAlign = 'middle';
 			cellBeatNo.innerHTML = "1";
+			innerCell = outerTable.insertRow().insertCell();
+			innerCell.colSpan = '4';
+			innerTable = CreateTable(innerCell);
+			aRow = innerTable.insertRow();
+			rangePos = CreateRange(minPosValue, minPosValue, maxPosValue);
+			elePosition = CreateSpan(lab, rangePos, minPosValue + "/" + maxPosValue, aRow, minWidth);
+			//aRow.insertCell().innerText = "Hello There Oh Great One";
+		}
+		else
+		{
+			rangePos = CreateRange(minPosValue, minPosValue, maxPosValue);
+			elePosition = CreateSpan(lab, rangePos, minPosValue + "/" + maxPosValue, barRow, minWidth);
 		}
 		if (dataType != 1)
 		{
@@ -1302,19 +1321,6 @@ function CheckForAutoScroll(instant, lowBarData)
 		barCell.style.padding = padding;
 		barCell.style.borderRight = '1px solid white';
 		innerTable = CreateTable(barCell);
-		rangePos = CreateRange(minPosValue, minPosValue, maxPosValue);
-		rangeSpeed = CreateRange(75, 100, 150, 5);
-		rangeVol = CreateRange(0, 100, 100);
-		let lab = (dataType == 1) ? "Time:" : "Bar:";
-		let minWidth = 4.5;
-		if (maxPosValue >= 100) minWidth = 6.5;
-		elePosition = CreateSpan(lab, rangePos, minPosValue + "/" + maxPosValue, innerTable.insertRow(), minWidth);
-		elePlaybackRate = CreateSpan('Speed:', rangeSpeed, "100%", innerTable.insertRow(), minWidth);
-		let elePlaybackVolume = CreateSpan('Volume:', rangeVol, "100%", innerTable.insertRow(), minWidth);
-		barCell = barRow.insertCell();
-		barCell.style.padding = padding;
-		barCell.style.borderRight = '1px solid white';
-		innerTable = CreateTable(barCell);
 		btnInc = CreateButton('button', "A+", 'Increase Font Size', innerTable.insertRow().insertCell(), DoInc);
 		btnNorm = CreateButton('button', "100<sup>%</sup>", 'Reset Font Size', innerTable.insertRow().insertCell(), DoNorm);
 		btnNorm.style.backgroundColor = "gray";
@@ -1324,6 +1330,24 @@ function CheckForAutoScroll(instant, lowBarData)
 		innerTable = CreateTable(barCell);
 		CreateButton('button', 'Index', "Go to Index", innerTable.insertRow().insertCell(), Up1);
 		CreateButton('button', 'Home', "Go to Main Index", innerTable.insertRow().insertCell(), Up2);
+		let rangeBass = CreateRange(0, 0, 100);
+		let rangeTreble = CreateRange(0, 0, 100);
+		let rangeSpeed = CreateRange(75, 100, 150, 5);
+		let rangeVol = CreateRange(0, 50, 100);
+		let nCells = Math.floor(barRow.cells.length);
+		barCell = barRow2.insertCell();
+		barCell.colSpan = nCells;
+		barCell.style.padding = padding;
+		div = document.createElement('div');
+		div.style.display = 'flex';
+		div.style.gap = '1em';
+		div.style.width = '100%';
+		barCell.appendChild(div);
+		let row = innerTable.insertRow();
+		let elePlaybackRate = CreateSpanNew('Speed:', rangeSpeed, "100%", div, minWidth);
+		let elePlaybackVolume = CreateSpanNew('Volume:', rangeVol, "100%", div, minWidth);
+		let eleBass = CreateSpanNew('Bass:', rangeBass, "100%", div, minWidth);
+		let eleTreble = CreateSpanNew('Treble:', rangeTreble, "100%", div, minWidth);
 		controlWidth = barTable.scrollWidth;
 		controlHeight = barTable.scrollHeight;
 		rangePos.onmouseout = function (ev)
@@ -1344,12 +1368,12 @@ function CheckForAutoScroll(instant, lowBarData)
 		rangePos.onmousemove = function (ev)
 		{
 			let v = GetPos(rangePos, ev);
-			OnMouseMove(v,ev, false);
+			OnMouseMove(v, ev, false);
 		};
 		rangePos.ontouchmove = function (ev)
 		{
 			let v = GetPos(rangePos, ev.touches[0]);
-			OnMouseMove(v,ev,true);
+			OnMouseMove(v, ev, true);
 		};
 		rangePos.onmouseup = function (ev)
 		{
@@ -1368,11 +1392,45 @@ function CheckForAutoScroll(instant, lowBarData)
 			media.playbackRate = n / 100;
 			this.value = n;
 		};
+		rangeBass.oninput = function ()
+		{
+			SetBass(this.value);
+		};
+		rangeTreble.oninput = function ()
+		{
+			SetTreble(this.value);
+		};
 		rangeVol.oninput = function ()
 		{
-			media.volume = this.value / 100;
-			elePlaybackVolume.innerText = this.value + '%';
+			SetVolume(this.value);
 		};
+		function SetVolume(value)
+		{
+			value = Math.floor(value);
+			if (value < 0) value = 0;
+			else if (value > 100) value = 100;
+			media.volume = value / 100;
+			rangeVol.value = value;
+			elePlaybackVolume.innerText = value + '%';
+		}
+		function SetBass(value)
+		{
+			value = Math.floor(value);
+			if (value < 0) value = 0;
+			else if (value > 100) value = 100;
+			media.bass = value / 5;
+			rangeBass.value = value;
+			eleBass.innerText = value + '%';
+		}
+		function SetTreble(value)
+		{
+			value = Math.floor(value);
+			if (value < 0) value = 0;
+			else if (value > 100) value = 100;
+			media.treble = value / 5;
+			rangeTreble.value = value;
+			eleTreble.innerText = value + '%';
+		}
 		if (dataType == 1)
 		{
 			media.ontimeupdate = function ()
@@ -1381,6 +1439,9 @@ function CheckForAutoScroll(instant, lowBarData)
 				SetPosLabel(media.currentTime);
 			}
 		}
+		SetVolume(25);
+		SetBass(50);
+		SetTreble(50);
 		UnhideBar();
 		document.body.addEventListener('dblclick', UnhideBar);
 		media.addEventListener('pause', OnPause);
@@ -1396,6 +1457,17 @@ function CheckForAutoScroll(instant, lowBarData)
 	function Up2()
 	{
 		window.location.href = '../../index.html';
+	}
+	function SetVolume(value)
+	{
+		console.log(value);
+		value = Math.floor(value);
+		if (value < 0) value = 0;
+		else if (value > 100) value = 100;
+		media.volume = value / 100;
+		rangeVol.value = value;
+		elePlaybackVolume.innerText = value + '%';
+		console.log("here " + value);
 	}
 	function CreateButton(className, text, tooltip, parent, clickEvent)
 	{
@@ -1450,11 +1522,31 @@ function CheckForAutoScroll(instant, lowBarData)
 		style.border = "0px none black;";
 		style.borderCollapse = 'collapse';
 		style.padding = '1px';
-		style.fontSize = '100%';
 		style.color = 'white';
 		style.fontSize = '10pt';
 		parent.appendChild(table);
 		return table;
+	}
+	function CreateSpanNew(textLeft, range, textRight, parentCell, minLength)
+	{
+		let div = document.createElement('div');
+		div.style.flex = '1';
+		parentCell.appendChild(div);
+		let table = CreateTable(div);
+		let parentRow = table.insertRow();
+		let cell = parentRow.insertCell();
+		cell.style.textAlign = 'right';
+		cell.innerText = textLeft;
+		cell.style.verticalAlign = 'middle';
+		cell = parentRow.insertCell();
+		cell.style.verticalAlign = 'middle';
+		cell.appendChild(range);
+		cell = parentRow.insertCell();
+		cell.style.textAlign = 'right';
+		cell.style.verticalAlign = 'middle';
+		cell.style.minWidth = minLength + "ch";
+		cell.innerText = textRight;
+		return cell;
 	}
 	function CreateSpan(textLeft, range, textRight, parentRow, minLength)
 	{
@@ -1727,7 +1819,20 @@ function CheckForAutoScroll(instant, lowBarData)
 			this.audioElement = new Audio();
 			this.audioElement.crossOrigin = "anonymous";
 			this.sourceNode = this.audioCtx.createMediaElementSource(this.audioElement);
-			this.sourceNode.connect(this.audioCtx.destination);
+			this.gainNode = this.audioCtx.createGain();
+			this.gainNode.gain.value = 2.5;
+			this.bassFilter = this.audioCtx.createBiquadFilter();
+			this.bassFilter.type = "lowshelf";
+			this.bassFilter.frequency.value = 200;
+			this.bassFilter.gain.value = 0;
+			this.trebleFilter = this.audioCtx.createBiquadFilter();
+			this.trebleFilter.type = "highshelf";
+			this.trebleFilter.frequency.value = 3000;
+			this.trebleFilter.gain.value = 0;
+			this.sourceNode.connect(this.gainNode);
+			this.gainNode.connect(this.bassFilter);
+			this.bassFilter.connect(this.trebleFilter);
+			this.trebleFilter.connect(this.audioCtx.destination);
 			this.startTime = 0;
 			this.elapsedOffset = 0;
 			this.isPlaying = false;
@@ -1775,6 +1880,219 @@ function CheckForAutoScroll(instant, lowBarData)
 		get paused()
 		{
 			return (!this.isPlaying);
+		}
+		#vScale = 3.0;
+		get volume()
+		{
+			return this.gainNode ? this.gainNode.gain.value / this.#vScale : 1.0;
+		}
+		set volume(value)
+		{
+			const normalizedValue = this.#vScale * Math.max(0, Math.min(1, value));
+			if (this.gainNode && this.audioCtx)
+			{
+				this.gainNode.gain.value = normalizedValue;
+			}
+		}
+		get bass()
+		{
+			return this.bassFilter ? this.bassFilter.gain.value : 0;
+		}
+		set bass(value)
+		{
+			if (this.bassFilter && this.audioCtx)
+			{
+				this.bassFilter.gain.setValueAtTime(value, this.audioCtx.currentTime);
+			}
+		}
+		get treble()
+		{
+			return this.trebleFilter ? this.trebleFilter.gain.value : 0;
+		}
+		set treble(value)
+		{
+			if (this.trebleFilter && this.audioCtx)
+			{
+				this.trebleFilter.gain.setValueAtTime(value, this.audioCtx.currentTime);
+			}
+		}
+		get echoTime()
+		{
+			return this.delayNode ? this.delayNode.delayTime.value : 0.3;
+		}
+		set echoTime(value)
+		{
+			if (value < 0) value = 0;
+			else if (value > 1) value = 1;
+			if (this.delayNode && this.audioCtx)
+			{
+				console.log("echo " + value);
+				this.delayNode.delayTime.setValueAtTime(value, this.audioCtx.currentTime);
+				console.log("echoTime " + this.echoTime);
+			}
+		}
+		get baseLatency()
+		{
+			return this.audioCtx.baseLatency || 0;
+		}
+		get outputLatency()
+		{
+			return this.audioCtx.outputLatency || 0;
+		}
+		get currentTime()
+		{
+			if (!this.isPlaying)
+			{
+				return this.elapsedOffset;
+			}
+			const currentRunTime = (this.audioCtx.currentTime - this.startTime) * this.playbackRate;
+			const rawSongTime = this.elapsedOffset + currentRunTime;
+			const outputLag = this.audioCtx.outputLatency || 0;
+			const baseLag = this.audioCtx.baseLatency || 0;
+			const totalHardwareLag = outputLag + baseLag;
+			return Math.max(0, rawSongTime - totalHardwareLag);
+		}
+		set currentTime(seconds)
+		{
+			this.elapsedOffset = Math.max(0, Math.min(seconds, this.duration));
+			this.audioElement.currentTime = this.elapsedOffset;
+			if (this.isPlaying)
+			{
+				this.startTime = this.audioCtx.currentTime;
+			}
+		}
+		get playbackRate()
+		{
+			return this.audioElement.playbackRate;
+		}
+		set playbackRate(speed)
+		{
+			const targetSpeed = Math.max(0.1, speed);
+			if (this.isPlaying)
+			{
+				this.elapsedOffset += (this.audioCtx.currentTime - this.startTime) * this.playbackRate;
+				this.startTime = this.audioCtx.currentTime;
+			}
+			this.audioElement.playbackRate = targetSpeed;
+		}
+		get duration()
+		{
+			return this.audioElement.duration || 0;
+		}
+		_setupEventForwarding()
+		{
+			this._boundPlay = () => this.dispatchEvent(new Event('play'));
+			this._boundPause = () => this.dispatchEvent(new Event('pause'));
+			this._boundRateChange = () => this.dispatchEvent(new Event('ratechange'));
+			this._boundEnded = () =>
+			{
+				this.isPlaying = false;
+				this.elapsedOffset = 0;
+				this.dispatchEvent(new Event('ended'));
+			};
+			this.audioElement.addEventListener('play', this._boundPlay);
+			this.audioElement.addEventListener('pause', this._boundPause);
+			this.audioElement.addEventListener('ratechange', this._boundRateChange);
+			this.audioElement.addEventListener('ended', this._boundEnded);
+		}
+		async destroy()
+		{
+			if (this.isPlaying)
+			{
+				this.audioElement.pause();
+				this.isPlaying = false;
+			}
+			this.audioElement.src = "";
+			this.audioElement.load();
+			if (this._boundPlay) this.audioElement.removeEventListener('play', this._boundPlay);
+			if (this._boundPause) this.audioElement.removeEventListener('pause', this._boundPause);
+			if (this._boundRateChange) this.audioElement.removeEventListener('ratechange', this._boundRateChange);
+			if (this._boundEnded) this.audioElement.removeEventListener('ended', this._boundEnded);
+			if (this.sourceNode)
+			{
+				this.sourceNode.disconnect();
+			}
+			if (this.audioCtx && this.audioCtx.state !== 'closed')
+			{
+				await this.audioCtx.close();
+			}
+			this.audioElement = null;
+			this.sourceNode = null;
+			this.audioCtx = null;
+		}
+	}
+	class AudioControllerXX extends EventTarget
+	{
+		constructor()
+		{
+			super();
+			this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+			this.audioElement = new Audio();
+			this.audioElement.crossOrigin = "anonymous";
+			this.sourceNode = this.audioCtx.createMediaElementSource(this.audioElement);
+			this.gainNode = this.audioCtx.createGain();
+			this.gainNode.gain.value = 1.0;
+			this.sourceNode.connect(this.gainNode);
+			this.gainNode.connect(this.audioCtx.destination);
+			this.startTime = 0;
+			this.elapsedOffset = 0;
+			this.isPlaying = false;
+			this._setupEventForwarding();
+		}
+		async load(url)
+		{
+			this.audioElement.src = url;
+			return new Promise((resolve, reject) =>
+			{
+				const onLoad = () =>
+				{
+					this.audioElement.removeEventListener('error', onError);
+					resolve();
+				};
+				const onError = (error) =>
+				{
+					this.audioElement.removeEventListener('loadedmetadata', onLoad);
+					reject(new Error(`Failed to load audio: ${error.message || 'Unknown error'}`));
+				};
+				this.audioElement.addEventListener('loadedmetadata', onLoad, { once: true });
+				this.audioElement.addEventListener('error', onError, { once: true });
+			});
+		}
+		play()
+		{
+			if (this.isPlaying) return;
+			if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
+			this.startTime = this.audioCtx.currentTime;
+			this.audioElement.play();
+			this.isPlaying = true;
+		}
+		pause()
+		{
+			if (!this.isPlaying) return;
+			this.audioElement.pause();
+			this.elapsedOffset += (this.audioCtx.currentTime - this.startTime) * this.playbackRate;
+			this.isPlaying = false;
+		}
+		stop()
+		{
+			this.pause();
+			this.currentTime = 0;
+		}
+		get paused()
+		{
+			return (!this.isPlaying);
+		}
+		get volume()
+		{
+			return this.gainNode ? this.gainNode.gain.value/5 : 1.0;
+		}
+		set volume(value)
+		{
+			const normalizedValue = 5*Math.max(0, Math.min(1, value));
+			if (this.gainNode && this.audioCtx)
+			{
+				this.gainNode.gain.value = normalizedValue;
+			}
 		}
 		get baseLatency()
 		{
