@@ -1383,7 +1383,13 @@ function CheckForAutoScroll(instant, lowBarData)
 		rangePos.ontouchend = function (ev)
 		{
 			blnPositioning = false;
-			SetMediaPosition(ev.touches[0]);
+			if (ev.changedTouches && ev.changedTouches.length > 0)
+			{
+				SetMediaPosition(ev.changedTouches[0]);
+			} else
+			{
+				SetMediaPosition(ev);
+			}
 		}
 		rangeSpeed.oninput = function ()
 		{
@@ -1418,7 +1424,7 @@ function CheckForAutoScroll(instant, lowBarData)
 			value = Math.floor(value);
 			if (value < 0) value = 0;
 			else if (value > 100) value = 100;
-			media.bass = value / 5;
+			media.bass = value / 10;
 			rangeBass.value = value;
 			eleBass.innerText = value + '%';
 		}
@@ -1881,7 +1887,7 @@ function CheckForAutoScroll(instant, lowBarData)
 		{
 			return (!this.isPlaying);
 		}
-		#vScale = 3.0;
+		#vScale = 2.0;
 		get volume()
 		{
 			return this.gainNode ? this.gainNode.gain.value / this.#vScale : 1.0;
