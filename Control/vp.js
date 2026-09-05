@@ -240,10 +240,13 @@ function MakeSureLyricPanelCorrectSize()
 		}
 		lyricPanel.style.flexBasis = w + 'px';
 		lyricPanel.style.width = w + 'px';
-		let nw = (container.offsetWidth - resizerSize - w)+'px';
-		scorePanel.style.flexBasis = nw;
-		scorePanel.style.width = nw;
-		scoreSrc.style.width = nw;
+		if (!isTouchDeviceOrNoScores)
+		{
+			let nw = (container.offsetWidth - resizerSize - w) + 'px';
+			scorePanel.style.flexBasis = nw;
+			scorePanel.style.width = nw;
+			scoreSrc.style.width = nw;
+		}
 	}
 	else
 	{
@@ -256,10 +259,13 @@ function MakeSureLyricPanelCorrectSize()
 		}
 		lyricPanel.style.flexBasis = h + 'px';
 		lyricPanel.style.height = h + 'px';
-		let nh = (container.offsetHeight - resizerSize - h) + 'px';
-		scorePanel.style.flexBasis = nh;
-		scorePanel.style.height = nh;
-		scoreSrc.style.height = nh;
+		if (!isTouchDeviceOrNoScores)
+		{
+			let nh = (container.offsetHeight - resizerSize - h) + 'px';
+			scorePanel.style.flexBasis = nh;
+			scorePanel.style.height = nh;
+			scoreSrc.style.height = nh;
+		}
 	}
 }
 function EnsureCorrectSizes()
@@ -1186,6 +1192,7 @@ function CheckForAutoScroll(instant, lowBarData)
 		(new ResizeObserver(FontOrZoomChange)).observe(div);
 		isTouchDeviceOrNoScores = 'ontouchstart' in document.documentElement;
 		scoreSrc = document.getElementById("scoreSrc");
+		//isTouchDeviceOrNoScores = true;
 		if (scoreSrc == null)
 		{
 			isTouchDeviceOrNoScores = true;
