@@ -521,7 +521,8 @@ function CheckForAutoScroll(instant, lowBarData)
 			if (index === 0 && elapsed < 0) elapsed = 0;
 			if (elapsed < 0)
 			{
-				console.log("Negative so recalc");
+				barData = null;
+				console.log("Negative so recalc " + elapsed);
 				setTimeout(MonitorRow, 1);
 				return;
 			}
@@ -727,6 +728,7 @@ function CheckForAutoScroll(instant, lowBarData)
 				}
 			}
 			total /= align;
+			total = Math.floor(total);
 			for (let i = 0; i < nOffsets; i++)
 			offsets[i] /= align;
 			offsets[nOffsets] = total;
@@ -1473,7 +1475,6 @@ function CheckForAutoScroll(instant, lowBarData)
 		media.volume = value / 100;
 		rangeVol.value = value;
 		elePlaybackVolume.innerText = value + '%';
-		console.log("here " + value);
 	}
 	function CreateButton(className, text, tooltip, parent, clickEvent)
 	{

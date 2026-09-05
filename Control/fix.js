@@ -23,10 +23,28 @@ function FixRows(data)
 				let row = rows[r];
 				if (row.hasAttribute('tot'))
 				{
-					let oh = row.getAttribute('OH');
-					let OH = parseInt(oh);
-					let H = OH % 10;
-					let O=(oh.length === 1)?H:Math.floor(OH / 10);
+					const oh = row.getAttribute('OH');
+					let H = 0, O = 0;
+					if (oh.length >= 3)
+					{
+						const arr = oh.split(',');
+						O = parseInt(arr[0]);
+						H = parseInt(arr[1]);
+					}
+					else
+					{
+						let OH = parseInt(oh);
+						if (oh.length == 1)
+						{
+							H = OH;
+							O = OH;
+						}
+						else
+						{
+							H = OH % 10;
+							O = Math.floor(OH / 10);
+						}
+					}
 					let part = row.getAttribute('PL');
 					if (part != null)
 					{
