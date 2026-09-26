@@ -16,13 +16,15 @@ table, th, td {font-family:inherit;font-size:inherit;font-weight:inherit;}
 [note] {height:30px;width:auto;filter: brightness(0);}
 .dir {width:30px;height:auto;filter: brightness(0);}
 table [inline] {margin:0px;font-family:serif;font-size:75%;display:inline-table;border-collapse:collapse;border: 1px solid black;box-shadow:1px 1px 3px black;padding:0}
-[parts] {color:white;padding:0px 2px 0px 2px;border:none;width:22px;text-align:center}
+[parts] {color:white;padding:0px 2px 0px 2px;border:none;width:24px;text-align:center}
+[clef] {background-color:white;font-size:140%;text-align:center; border:none; padding: 0 1px 0 1px}
 [brt] {border-right:1px solid slategray;padding-right:4px}
 [br0] {border-right:0px solid white}
 [bl] {border-left:1px solid lightgray}
 [lf] {text-align:left}
 [rg] {text-align:right}
 [ct] {text-align:center}
+[tn] {font-size:25%;color:darkRed}
 [S_FG] {color:#8B0000;}
 [S_BG] {background-color:#8B0000;}
 [A_FG] {color:#FF1493;}
@@ -31,7 +33,7 @@ table [inline] {margin:0px;font-family:serif;font-size:75%;display:inline-table;
 [T_BG] {background-color:#006400;}
 [B_FG] {color:#000000;}
 [B_BG] {background-color:#000000;}
-[O_FG] {color:#708090;}
+[O_FG] {color:#a0a0a0;}
 [O_BG] {background-color:#708090;}
 [SA_FG] {color:#DA70D6;}
 [SA_BG] {background-color:#DA70D6;}
