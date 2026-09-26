@@ -1339,6 +1339,13 @@ function CheckForAutoScroll(instant, lowBarData)
 		innerTable = CreateTable(barCell);
 		CreateButton('button', 'Index', "Go to Index", innerTable.insertRow().insertCell(), Up1);
 		CreateButton('button', 'Home', "Go to Main Index", innerTable.insertRow().insertCell(), Up2);
+		barCell = barRow.insertCell();
+		barCell.style.padding = padding;
+		innerTable = CreateTable(barCell);
+		CreateButton('button', 'S', "Sort SATB", innerTable.insertRow().insertCell(), () => SortParts('SALTBM'));
+		CreateButton('button', 'A', "Sort ATBS", innerTable.insertRow().insertCell(), () => SortParts('ALTBMS'));
+		CreateButton('button', 'T', "Sort TBSA", innerTable.insertRow().insertCell(), () => SortParts('TBMSAL'));
+		CreateButton('button', 'B', "Sort BSAT", innerTable.insertRow().insertCell(), () => SortParts('BMSALT'));
 		let rangeBass = CreateRange(0, 0, 100);
 		let rangeTreble = CreateRange(0, 0, 100);
 		let rangeSpeed = CreateRange(75, 100, 150, 5);
@@ -1464,6 +1471,22 @@ function CheckForAutoScroll(instant, lowBarData)
 		media.addEventListener('ended', OnPlayEnd);
 		window.addEventListener('resize',  EnsureCorrectSizes);
 		UpdateStatus();
+	}
+	function SortA()
+	{
+		SortParts("ALTBMS");
+	}
+	function SortB()
+	{
+		SortParts("BMSALT");
+	}
+	function SortS()
+	{
+		SortParts("SALTBM");
+	}
+	function SortT()
+	{
+		SortParts("TBMSAL");
 	}
 	function Up1()
 	{

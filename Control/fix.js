@@ -7,6 +7,35 @@ function GetLetter(part)
 	if ("SATBMLE".indexOf(part, 0) >= 0) return part;
 	return "O";
 }
+let theOrder;
+function MySort(a, b)
+{
+	const attA = a.getAttribute('PL');
+	const attB = b.getAttribute('PL');
+	if (attA === attB) return 0;
+	let valA = theOrder.indexOf(attA);
+	if (valA < 0) valA = 999;
+	let valB = theOrder.indexOf(attB);
+	if (valB < 0) valB = 999;
+	return valA - valB;
+}
+function SortParts(order)
+{
+	theOrder = order;
+	const tables = document.querySelectorAll("table[fx]");
+	let m = tables.length;
+	for (let t = 0; t < m; t++)
+	{
+		let rows = tables[t].querySelectorAll('tr[PL]');
+		const forSorting = [...rows];
+		forSorting.sort(MySort);
+		let tBody = tables[t].querySelector('tbody');
+		forSorting.forEach(row =>
+		{
+			tBody.appendChild(row);
+		});
+	}
+}
 function FixRows(data)
 {
 	let tabs = document.getElementsByTagName('table');
@@ -76,6 +105,7 @@ function FixRows(data)
 			}
 		}
 	}
+	SortParts("SALTBM");
 }
 function CheckFontSizes()
 {
